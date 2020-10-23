@@ -1,1 +1,0 @@
-$shimdir = "G:\software\Global_shims"
