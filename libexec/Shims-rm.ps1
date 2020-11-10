@@ -10,7 +10,7 @@ foreach ($app in $apps){# 用数组来接收任意参数
         {
             write-host "Deleting..."
             foreach ($target in $targets){
-                rm $shimdir\$target
+                rm $target
             }
             
         }
