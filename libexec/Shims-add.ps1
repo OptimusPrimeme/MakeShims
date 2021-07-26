@@ -35,9 +35,13 @@ function create_shim($path) {
 	elseif($path -match '\.(bat|cmd)$') {
 		# shim .exe, .bat, .cmd so they can be used by programs with no awareness of PSH
 		"@`"$path`" %*" | out-file "$shimdir\$fname_stem.cmd" -encoding oem
+		#sh脚本
+		"#!/bin/sh`nMSYS2_ARG_CONV_EXCL=/C cmd.exe /C `"$path`" $arg `"$@`"" | Out-File "$shimdir\$fname_stem" -Encoding oem
 	} elseif($path -match '\.ps1$') {
 		# make ps1 accessible from cmd.exe
 		"@powershell -noprofile -ex unrestricted `"& '$path' %*;exit `$lastexitcode`"" | out-file "$shimdir\$fname_stem.cmd" -encoding oem
+		#sh脚本
+		"#!/bin/sh`npowershell.exe -noprofile -ex unrestricted `"$path`" $arg `"$@`"" | Out-File "$shimdir\$fname_stem" -Encoding oem
 	}
 
 	# if(!$cmd){
