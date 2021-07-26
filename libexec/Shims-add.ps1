@@ -1,4 +1,4 @@
-param($cmd = "",$path, [switch]$help)# 第一个参数为自定义名
+param($cmd = "",$path, $arg,[switch]$help)# 第一个参数为自定义名
 . $psscriptroot/../Config/ShimConfig.ps1
 
 Set-StrictMode -Off;
@@ -16,37 +16,63 @@ function create_shim($path) {
 
 	if(!$cmd){
 		$fname_stem = [io.path]::getfilenamewithoutextension($path).tolower()
-
-		$shim = "$shimdir\$fname_stem.ps1"
-
-		echo "`$path = '$path'" > $shim
-		echo 'if($myinvocation.expectingInput) { $input | & $path @args } else { & $path @args }' >> $shim
-
-		if($path -match '\.((exe)|(bat)|(cmd))$') {
-			# shim .exe, .bat, .cmd so they can be used by programs with no awareness of PSH
-			"@`"$path`" %*" | out-file "$shimdir\$fname_stem.cmd" -encoding oem
-		} elseif($path -match '\.ps1$') {
-			# make ps1 accessible from cmd.exe
-			"@powershell -noprofile -ex unrestricted `"& '$path' %*;exit `$lastexitcode`"" | out-file "$shimdir\$fname_stem.cmd" -encoding oem
-		}
-	}
-	else
-	{
+	} else{
 		$fname_stem = $cmd
+	}
+	$shim = "$shimdir\$fname_stem.ps1"
 
-		$shim = "$shimdir\$fname_stem.ps1"
+	echo "`$path = '$path'" > $shim
+	echo 'if($myinvocation.expectingInput) { $input | & $path @args } else { & $path @args }' >> $shim
 
-		echo "`$path = '$path'" > $shim
-		echo 'if($myinvocation.expectingInput) { $input | & $path @args } else { & $path @args }' >> $shim
-
-		if($path -match '\.((exe)|(bat)|(cmd))$') {
-			# shim .exe, .bat, .cmd so they can be used by programs with no awareness of PSH
-			"@`"$path`" %*" | out-file "$shimdir\$fname_stem.cmd" -encoding oem
-		} elseif($path -match '\.ps1$') {
-			# make ps1 accessible from cmd.exe
-			"@powershell -noprofile -ex unrestricted `"& '$path' %*;exit `$lastexitcode`"" | out-file "$shimdir\$fname_stem.cmd" -encoding oem
+	
+	if($path -match '\.(exe|com)$'){
+		Copy-Item "$env:SCOOP/apps/scoop/current/supporting/shims/71/shim.exe" "$shimdir\$fname_stem.exe" -Force
+		write-output "path = $path" | Out-File "$shimdir\$fname_stem.shim" -encoding utf8
+		if($arg){
+			Write-Output "args =$arg" |Out-File "$shimdir\$fname_stem.shim" -Encoding utf8 -Append
 		}
 	}
+	elseif($path -match '\.(bat|cmd)$') {
+		# shim .exe, .bat, .cmd so they can be used by programs with no awareness of PSH
+		"@`"$path`" %*" | out-file "$shimdir\$fname_stem.cmd" -encoding oem
+	} elseif($path -match '\.ps1$') {
+		# make ps1 accessible from cmd.exe
+		"@powershell -noprofile -ex unrestricted `"& '$path' %*;exit `$lastexitcode`"" | out-file "$shimdir\$fname_stem.cmd" -encoding oem
+	}
+
+	# if(!$cmd){
+	# 	$fname_stem = [io.path]::getfilenamewithoutextension($path).tolower()
+
+	# 	$shim = "$shimdir\$fname_stem.ps1"
+
+	# 	echo "`$path = '$path'" > $shim
+	# 	echo 'if($myinvocation.expectingInput) { $input | & $path @args } else { & $path @args }' >> $shim
+
+	# 	if($path -match '\.((exe)|(bat)|(cmd))$') {
+	# 		# shim .exe, .bat, .cmd so they can be used by programs with no awareness of PSH
+	# 		"@`"$path`" %*" | out-file "$shimdir\$fname_stem.cmd" -encoding oem
+	# 	} elseif($path -match '\.ps1$') {
+	# 		# make ps1 accessible from cmd.exe
+	# 		"@powershell -noprofile -ex unrestricted `"& '$path' %*;exit `$lastexitcode`"" | out-file "$shimdir\$fname_stem.cmd" -encoding oem
+	# 	}
+	# }
+	# else
+	# {
+	# 	$fname_stem = $cmd
+
+	# 	$shim = "$shimdir\$fname_stem.ps1"
+
+	# 	echo "`$path = '$path'" > $shim
+	# 	echo 'if($myinvocation.expectingInput) { $input | & $path @args } else { & $path @args }' >> $shim
+
+	# 	if($path -match '\.((exe)|(bat)|(cmd))$') {
+	# 		# shim .exe, .bat, .cmd so they can be used by programs with no awareness of PSH
+	# 		"@`"$path`" %*" | out-file "$shimdir\$fname_stem.cmd" -encoding oem
+	# 	} elseif($path -match '\.ps1$') {
+	# 		# make ps1 accessible from cmd.exe
+	# 		"@powershell -noprofile -ex unrestricted `"& '$path' %*;exit `$lastexitcode`"" | out-file "$shimdir\$fname_stem.cmd" -encoding oem
+	# 	}
+	# }
 }
 
 function env($name,$val='__get') {
